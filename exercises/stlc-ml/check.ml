@@ -61,6 +61,10 @@ let rec tc env = function
       assert_int (tc env e1);
       assert_int (tc env e2);
       IntT
+  | MulE(e1, e2) ->
+      assert_int (tc env e1);
+      assert_int (tc env e2);
+      IntT
   | If0E(e1, e2, e3) ->
       assert_int (tc env e1);
       let t2 = tc env e2 in

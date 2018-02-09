@@ -14,6 +14,7 @@ type exp =
          | LetE of (var * exp) list * exp
          | IntE of int
          | SubE of exp * exp
+         | MulE of exp * exp
          | If0E of exp * exp * exp
          | TupE of exp list
          | PrjE of exp * int
@@ -31,10 +32,10 @@ let rec fv e0 =
   | LetE(bindings, body) -> remove_bindings bindings (fv body)
   | IntE _ -> Set.empty
   | SubE(e1, e2) -> Set.union (fv e1) (fv e2)
+  | MulE(e1, e2) -> Set.union (fv e1) (fv e2)
   | If0E(e1, e2, e3) -> Set.union_list [fv e1; fv e2; fv e3]
   | TupE es -> Set.union_list (List.map ~f:fv es)
   | PrjE(e, _) -> fv e
   | LamE(bindings, body) -> remove_bindings bindings (fv body)
   | AppE(e, es) -> Set.union_list (List.map ~f:fv (e :: es))
   | FixE(x, _, e) -> Set.remove (fv e) x
-

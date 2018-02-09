@@ -30,7 +30,7 @@ let rec type_of_sexp = function
 let type_of_string s = type_of_sexp (S.of_string s)
 
 (* Keywords, which cannot be identifiers. *)
-let keywords = ["let"; "let*"; "-"; "if0"; "tup"; "prj"; "lam"; "fix"]
+let keywords = ["let"; "let*"; "-"; "*"; "if0"; "tup"; "prj"; "lam"; "fix"]
 
 (* Is the given string a keyword? *)
 let is_keyword = List.mem ~equal:(=) keywords
@@ -72,6 +72,8 @@ let rec expr_of_sexp sexp0 =
                           bindings'
       | [S.Atom "-"; e1; e2] ->
           SubE(expr_of_sexp e1, expr_of_sexp e2)
+      | [S.Atom "*"; e1; e2] ->
+         MulE(expr_of_sexp e1, expr_of_sexp e2)
       | [S.Atom "if0"; e1; e2; e3] ->
           If0E(expr_of_sexp e1, expr_of_sexp e2, expr_of_sexp e3)
       | (S.Atom "tup" :: es) ->

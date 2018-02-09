@@ -39,6 +39,10 @@ let rec eval env = function
       (match eval env e1, eval env e2 with
        | IntV z1, IntV z2 -> IntV (z1 - z2)
        | _ -> raise (Can't_happen "ints expected"))
+  | MulE(e1, e2) ->
+     (match eval env e1, eval env e2 with
+      | IntV z1, IntV z2 -> IntV (z1 * z2)
+      | _ -> raise (Can't_happen "ints expected"))
   | If0E(cond, zero, non_zero) ->
       (match eval env cond with
        | IntV 0 -> eval env zero
