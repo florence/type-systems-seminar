@@ -1,12 +1,14 @@
 open Core
 
+(* Variables *)
+type var = Var.t
+
 (* Types *)
 type typ = IntT
          | ArrT of typ list * typ
          | TupT of typ list
-
-(* Variables *)
-type var = Var.t
+         | VarT of var
+         | All of var * typ
 
 (* Expressions *)
 type exp =
@@ -21,6 +23,17 @@ type exp =
          | LamE of (var * typ) list * exp
          | AppE of exp * exp list
          | FixE of var * typ * exp
+         | TyLamE of var * exp
+         | TyAppE of exp * typ
+
+let rec tfv =
+  let module Set = Var.Set in
+  function
+  | IntT -> Set.empty
+  | ArrT(tys,ty) -> Set.union (Set.union_list (List.map ~f:tfv tys)) (tfv ty)
+  | TupT(tys) -> (Set.union_list (List.map ~f:tfv tys))
+  | VarT(var) -> Set.singleton var
+  | All(var,typ) -> Set.remove (tfv typ) var
 
 (* Computes the free variables of an expression. *)
 let rec fv e0 =
@@ -39,3 +52,5 @@ let rec fv e0 =
   | LamE(bindings, body) -> remove_bindings bindings (fv body)
   | AppE(e, es) -> Set.union_list (List.map ~f:fv (e :: es))
   | FixE(x, _, e) -> Set.remove (fv e) x
+  | TyLamE(x, e) -> Set.remove (fv e) x
+  | TyAppE(e1, e2) -> Set.union (fv e1) (tfv e2)

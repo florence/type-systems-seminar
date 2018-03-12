@@ -24,13 +24,15 @@ let rec type_of_sexp = function
        | [] -> stx_err "return type" t0)
   | S.List (S.Atom "tup" :: args) ->
       TupT(List.map ~f:type_of_sexp args)
+  | S.Atom x -> VarT(x)
+  | S.List [S.Atom "All" ; S.Atom x ; ty] -> All(x,type_of_sexp ty)
   | s -> failwith ("could not parse type: " ^ S.to_string s)
 
 (* Parses a type from a string, via an s-expression. *)
 let type_of_string s = type_of_sexp (S.of_string s)
 
 (* Keywords, which cannot be identifiers. *)
-let keywords = ["let"; "let*"; "-"; "*"; "if0"; "tup"; "prj"; "lam"; "fix"]
+let keywords = ["let"; "let*"; "-"; "*"; "if0"; "tup"; "prj"; "lam"; "fix" ; "tylam" ; "tyapp"]
 
 (* Is the given string a keyword? *)
 let is_keyword = List.mem ~equal:(=) keywords
@@ -84,6 +86,10 @@ let rec expr_of_sexp sexp0 =
           PrjE(expr_of_sexp e, ix)
       | [S.Atom "lam"; S.List bindings; body] ->
           LamE(bindings_of_sexps type_of_sexp bindings, expr_of_sexp body)
+      | [S.Atom "tylam"; S.Atom x ; body] ->
+         TyLamE(x, expr_of_sexp body)
+      | [S.Atom "tyapp"; e1 ; e2] ->
+         TyAppE(expr_of_sexp e1, type_of_sexp e2)
       | [S.Atom "fix"; S.Atom x; t; e] ->
           assert_not_keyword x;
           FixE(x, type_of_sexp t, expr_of_sexp e)

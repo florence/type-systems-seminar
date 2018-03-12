@@ -46,47 +46,60 @@ let un_arr i = function
       else got_exp t ("arrow of arity " ^ string_of_int i)
   | t -> got_exp t "arrow type"
 
+let rec tysubst var ty = function
+  | IntT -> IntT
+  | ArrT(lot,ty1) -> ArrT(List.map ~f:(tysubst var ty) lot, tysubst var ty ty1)
+  | TupT(lot) -> TupT(List.map ~f:(tysubst var ty) lot)
+  | All(var1,ty1) -> if var1 = var then All(var1,ty) else All(var1,tysubst var ty ty1)
+  | VarT(x) -> if x = var then ty else VarT(x)
+
 (* Type checks a term in the given environment. *)
-let rec tc env = function
+let rec tc tyenv env = function
   | VarE x ->
       (match Env.lookup env x with
        | Some t -> t
        | None   -> raise (Type_error ("unbound variable: " ^ x)))
   | LetE(xes, body) ->
-      let xts  = List.map ~f:(fun (x, e) -> (x, tc env e)) xes in
+      let xts  = List.map ~f:(fun (x, e) -> (x, tc tyenv env e)) xes in
       let env' = Env.extend_list env xts in
-        tc env' body
+        tc tyenv env' body
   | IntE _ -> IntT
   | SubE(e1, e2) ->
-      assert_int (tc env e1);
-      assert_int (tc env e2);
+      assert_int (tc tyenv env e1);
+      assert_int (tc tyenv env e2);
       IntT
   | MulE(e1, e2) ->
-      assert_int (tc env e1);
-      assert_int (tc env e2);
+      assert_int (tc tyenv env e1);
+      assert_int (tc tyenv env e2);
       IntT
   | If0E(e1, e2, e3) ->
-      assert_int (tc env e1);
-      let t2 = tc env e2 in
-      let t3 = tc env e3 in
+      assert_int (tc tyenv env e1);
+      let t2 = tc tyenv env e2 in
+      let t3 = tc tyenv env e3 in
       assert_same_type t2 t3;
       t2
   | TupE(es) ->
-      TupT(List.map ~f:(tc env) es)
+      TupT(List.map ~f:(tc tyenv env) es)
   | PrjE(e, ix) ->
-      prj_tup (tc env e) ix
+      prj_tup (tc tyenv env e) ix
   | LamE(xts, body) ->
       let env' = Env.extend_list env xts in
-      let tr   = tc env' body in
+      let tr   = tc tyenv env' body in
       ArrT(List.map ~f:snd xts, tr)
   | AppE(e0, es) ->
-      let (tas, tr) = un_arr (List.length es) (tc env e0) in
-      let ts        = List.map ~f:(tc env) es in
+      let (tas, tr) = un_arr (List.length es) (tc tyenv env e0) in
+      let ts        = List.map ~f:(tc tyenv env) es in
       assert_same_types tas ts;
       tr
   | FixE(x, t, e) ->
       assert_arr t;
       let env' = Env.extend env x t in
-      let t'   = tc env' e in
+      let t'   = tc tyenv env' e in
       assert_same_type t t';
       t
+  | TyLamE(x,body) -> All(x, tc (Env.extend tyenv x ()) env body)
+  | TyAppE(e,ty) ->
+     let tye = tc tyenv env e in
+     (match tye with
+      | All(x,tyeb) -> tysubst x ty tyeb
+      | _ -> raise (Type_error "that ain't on tylam"))
