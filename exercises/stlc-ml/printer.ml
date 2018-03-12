@@ -16,6 +16,8 @@ let rec type_to_sexp = function
       S.List (S.Atom "->" :: List.map ~f:type_to_sexp (ts @ [tr]))
   | TupT ts ->
       S.List (S.Atom "*" :: List.map ~f:type_to_sexp ts)
+  | VarT x -> (S.Atom x)
+  | All(var,ty) -> S.List [S.Atom "All" ; type_to_sexp ty]
 
 (* Prints a type as a string. *)
 let type_to_string t = S.to_string_hum (type_to_sexp t)

@@ -1,0 +1,20 @@
+((tyapp (tylam X
+               (lam ((one X)
+                     (start X)
+                     (ifzero (-> X (-> X) (-> X) X))
+                     (mul (-> X X X))
+                     (sub (-> X X X)))
+                    (let
+                        ((fact (fix fact (-> X X)
+                                    (lam ((n X))
+                                         (ifzero n
+                                                 (lam () one)
+                                                 (lam () (mul n (fact (sub n one)))))))))
+                      (fact start))))
+        int)
+ 1
+ 5
+ (lam ((z int) (then (-> int)) (else (-> int)))
+      (if0 z (then) (else)))
+ (lam ((x int) (y int)) (* x y))
+ (lam ((x int) (y int)) (- x y)))
