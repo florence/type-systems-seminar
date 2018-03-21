@@ -103,3 +103,9 @@ let rec tc tyenv env = function
      (match tye with
       | All(x,tyeb) -> tysubst x ty tyeb
       | _ -> raise (Type_error "that ain't on tylam"))
+
+let tc' term =
+  let module Set = Var.Set in
+  match Set.to_list (ftv_of_e term) with
+  | (a :: b) -> raise (Type_error ("unbound variable: " ^ a))
+  | [] -> tc Env.empty Env.empty term

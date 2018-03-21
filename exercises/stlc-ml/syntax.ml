@@ -54,3 +54,20 @@ let rec fv e0 =
   | FixE(x, _, e) -> Set.remove (fv e) x
   | TyLamE(x, e) -> Set.remove (fv e) x
   | TyAppE(e1, e2) -> Set.union (fv e1) (tfv e2)
+
+let rec ftv_of_e e0 =
+  let module Set = Var.Set in
+  match e0 with
+  | VarE x -> Set.empty
+  | LetE(bindings, body) -> Set.union (ftv_of_e body) (Set.union_list (List.map ~f:ftv_of_e (List.map ~f:snd bindings)))
+  | IntE _ -> Set.empty
+  | SubE(e1, e2) -> Set.union (ftv_of_e e1) (ftv_of_e e2)
+  | MulE(e1, e2) -> Set.union (ftv_of_e e1) (ftv_of_e e2)
+  | If0E(e1, e2, e3) -> Set.union_list [ftv_of_e e1; ftv_of_e e2; ftv_of_e e3]
+  | TupE es -> Set.union_list (List.map ~f:ftv_of_e es)
+  | PrjE(e, _) -> ftv_of_e e
+  | LamE(bindings, body) -> Set.union (ftv_of_e body) (Set.union_list (List.map ~f:tfv (List.map ~f:snd bindings)))
+  | AppE(e, es) -> Set.union_list (List.map ~f:ftv_of_e (e :: es))
+  | FixE(x, t, e) -> Set.union (ftv_of_e e) (tfv t)
+  | TyLamE(x, e) -> Set.remove (ftv_of_e e) x
+  | TyAppE(e1, e2) -> Set.union (ftv_of_e e1) (tfv e2)

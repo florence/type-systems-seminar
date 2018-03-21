@@ -29,7 +29,7 @@ let rec repl () =
   | None -> ()
   | Some e ->
       (try
-        let t = Check.tc Env.empty Env.empty e in
+        let t = Check.tc' e in
         print_string (" : " ^ Printer.type_to_string t ^ "\n");
         let v = Eval.eval Env.empty e in
         print_string ("-> " ^ Eval.string_of_value v ^ "\n");
