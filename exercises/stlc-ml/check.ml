@@ -46,11 +46,14 @@ let un_arr i = function
       else got_exp t ("arrow of arity " ^ string_of_int i)
   | t -> got_exp t "arrow type"
 
-let rec tysubst var ty = function
+let rec tysubst var ty =
+  let module Set = Var.Set in
+  function
   | IntT -> IntT
   | ArrT(lot,ty1) -> ArrT(List.map ~f:(tysubst var ty) lot, tysubst var ty ty1)
   | TupT(lot) -> TupT(List.map ~f:(tysubst var ty) lot)
-  | All(var1,ty1) -> if var1 = var then All(var1,ty) else All(var1,tysubst var ty ty1)
+  | All(var1,ty1) ->
+     if var1 = var then All(var1,ty) else let n = VarT(Var.fresh "x" (Set.union (tfv ty) (tfv ty1))) in All(var1,tysubst var ty (tysubst var ty1 n))
   | VarT(x) -> if x = var then ty else VarT(x)
 
 (* Type checks a term in the given environment. *)
